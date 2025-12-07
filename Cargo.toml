@@ -1,0 +1,21 @@
+[package]
+name = "enceledus"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+collada = "0.17.0"
+glow = "0.16.0"
+gltf = "1.4.1"
+glutin = "0.32.3"
+glutin-winit = "0.5.0"
+winit = "0.30.12"
+math = { path = "math" }
+animation = { path = "animation" }
+image = "0.25.9"
+bitflags = "2.10.0"
+bytemuck = "1.24.0"
+
+[[bin]]
+name = "enceledus"
+path = "main.rs"
