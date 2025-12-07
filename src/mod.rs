@@ -3,3 +3,4 @@ pub mod core;
 pub mod gpu;
 pub mod render;
 pub mod loader;
+pub mod physics;

@@ -1,0 +1,58 @@
+use crate::src::gpu::resource_manager::GPUModelHandle;
+
+/// GPU-side animation skeleton
+/// Stores bone matrices ready for GPU skinning
+pub struct GPUSkeleton {
+    pub id: usize,
+    pub bone_matrices: Vec<math::mat4::Mat4>,
+    pub bone_count: usize,
+}
+
+impl GPUSkeleton {
+    pub fn new(id: usize, bone_count: usize) -> Self {
+        Self {
+            id,
+            bone_matrices: vec![math::mat4::Mat4::IDENTITY; bone_count],
+            bone_count,
+        }
+    }
+
+    /// Update a bone's transform matrix
+    pub fn set_bone_matrix(&mut self, bone_index: usize, matrix: math::mat4::Mat4) {
+        if bone_index < self.bone_matrices.len() {
+            self.bone_matrices[bone_index] = matrix;
+        }
+    }
+
+    /// Get all bone matrices for GPU upload
+    pub fn get_bone_matrices(&self) -> &[math::mat4::Mat4] {
+        &self.bone_matrices
+    }
+}
+
+/// Links a GPU model with its skeleton for animation
+/// This is what you render when the model is animated
+pub struct GPUAnimatedModel {
+    pub id: usize,
+    pub geometry: GPUModelHandle,
+    pub skeleton: Option<usize>, // GPUSkeleton ID
+}
+
+impl GPUAnimatedModel {
+    pub fn new(id: usize, geometry: GPUModelHandle) -> Self {
+        Self {
+            id,
+            geometry,
+            skeleton: None,
+        }
+    }
+
+    pub fn with_skeleton(mut self, skeleton_id: usize) -> Self {
+        self.skeleton = Some(skeleton_id);
+        self
+    }
+
+    pub fn is_animated(&self) -> bool {
+        self.skeleton.is_some()
+    }
+}

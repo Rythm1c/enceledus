@@ -1,3 +1,5 @@
+
+#[derive(Clone)]
 pub struct CPUMesh {
     pub positions: Vec<[f32; 3]>,
     pub normals: Option<Vec<[f32; 3]>>,
@@ -20,7 +22,7 @@ impl CPUMesh {
 
             // joint ids that affect each vertex
             joints: None,
-            
+
             // joint weights for skinning
             weights: None,
             indices: None,
@@ -103,6 +105,8 @@ impl CPUMesh {
         stride
     }
 }
+
+#[derive(Clone)]
 
 pub struct MeshAttributes {
     pub has_uv: bool,

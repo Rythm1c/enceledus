@@ -1,12 +1,15 @@
+use std::default;
+
 use super::material::Material;
 use super::mesh::CPUMesh;
 use super::texture::CPUTexture;
-use math::transform::Transform;
+
+/// Pure geometry data, no animation
+#[derive(Clone)]
 pub struct CPUModel {
     pub meshes: Vec<CPUMesh>,
     pub materials: Vec<Material>,
     pub texture: Vec<CPUTexture>,
-    pub transform: Transform,
 }
 
 impl CPUModel {
@@ -15,7 +18,6 @@ impl CPUModel {
             meshes: Vec::new(),
             materials: Vec::new(),
             texture: Vec::new(),
-            transform: Transform::DEFAULT,
         }
     }
 

@@ -1,4 +1,6 @@
 use image::{self, GenericImageView};
+
+#[derive(Clone)]
 pub struct CPUTexture {
     pub path: String,
     pub width: u32,
@@ -51,6 +53,7 @@ impl CPUTexture {
     }
 }
 
+#[derive(Clone)]
 pub enum TextureFormat {
     R8,
     Rgb8,
