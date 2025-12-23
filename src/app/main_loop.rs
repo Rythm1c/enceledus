@@ -1,8 +1,10 @@
 use std::error::Error;
 use std::ffi::CString;
 use std::num::NonZeroU32;
+use std::path::Path;
 
 use glow::HasContext;
+use math::vec3::vec3;
 use winit::application::ApplicationHandler;
 use winit::event::{ElementState, KeyEvent, MouseButton, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
@@ -20,6 +22,13 @@ use glutin::surface::{Surface, SwapInterval, WindowSurface};
 
 use glutin_winit::{DisplayBuilder, GlWindow};
 
+use crate::src::cpu::model::Model;
+use crate::src::loader::gltf_loader::{load_gltf, load_model_from_gltf, load_scenes};
+use crate::src::renderer::Renderer;
+use crate::src::scene::Scene;
+
+//use crate::src::loader::gltf_loader::{load_geometry_to_cpu_from_gltf};
+
 enum GlDisplayCreationState {
     /// The display was not build yet.
     Builder(DisplayBuilder),
@@ -36,6 +45,10 @@ struct Demo {
     exit_state: Result<(), Box<dyn Error>>,
     last_mouse_pos: Option<(f64, f64)>,
     is_mouse_dragging: bool,
+
+    scenes: Option<Vec<Scene>>,
+    renderer: Option<Renderer>,
+    model: Option<Model>,
 }
 
 impl Demo {
@@ -49,6 +62,10 @@ impl Demo {
             state: None,
             last_mouse_pos: None,
             is_mouse_dragging: false,
+
+            scenes: None,
+            renderer: None,
+            model: None,
         }
     }
 }
@@ -115,13 +132,21 @@ impl ApplicationHandler for Demo {
         let gl_context = self.gl_context.as_ref().unwrap();
         gl_context.make_current(&gl_surface).unwrap();
 
-        /* let _gl = gl::load_with(|s| {
-            let symbol = CString::new(s).unwrap();
-            gl_config
-                .display()
-                .get_proc_address(symbol.as_c_str())
-                .cast()
-        }); */
+        /* let model = load_geometry_to_cpu_from_gltf(Path::new("models/astronaut")).unwrap();
+
+        println!("model info");
+        println!(
+            "model bounds: {} {} {}",
+            model.get_point_scale().x,
+            model.get_point_scale().y,
+            model.get_point_scale().z
+        );
+        println!("model vert count: {}", model.total_vertex_count());
+        println!("model index count: {}", model.total_index_count());
+        println!("model texture count: {}", model.textures.len());
+        println!("model material count: {}", model.materials.len()); */
+        //println!("model node count: {}", model.nodes.len());
+
         let gl = unsafe {
             glow::Context::from_loader_function(|s| {
                 let symbol = CString::new(s).unwrap();
@@ -135,6 +160,17 @@ impl ApplicationHandler for Demo {
         unsafe { gl.enable(glow::DEPTH_TEST) }
 
         self.gl = Some(gl);
+
+        let file = load_gltf(Path::new("models/astronaut")).unwrap();
+        self.model = Some(load_model_from_gltf(&file).unwrap());
+        self.scenes = Some(load_scenes(&file));
+        self.renderer = Some(Renderer::new(self.gl.as_ref().unwrap()));
+        self.renderer
+            .as_mut()
+            .unwrap()
+            .upload_model(self.gl.as_ref().unwrap(), self.model.as_ref().unwrap());
+
+        self.scenes.as_mut().unwrap()[0].translate_tranform(vec3(0.0, 2.0, 5.0));
 
         // Try setting vsync.
         if let Err(res) = gl_surface
@@ -197,15 +233,28 @@ impl ApplicationHandler for Demo {
             WindowEvent::KeyboardInput { event, .. } => {
                 if let PhysicalKey::Code(code) = event.physical_key {
                     match (code, event.state) {
-                        (KeyCode::KeyW, ElementState::Pressed) => {}
-                        (KeyCode::KeyS, ElementState::Pressed) => {}
-                        (KeyCode::KeyA, ElementState::Pressed) => {}
-                        (KeyCode::KeyD, ElementState::Pressed) => {}
+                        (KeyCode::KeyW, ElementState::Pressed) => {
+                            self.scenes.as_mut().unwrap()[0]
+                                .set_camera_dir(crate::src::scene::camera::Direction::Forwards);
+                        }
+                        (KeyCode::KeyS, ElementState::Pressed) => {
+                            self.scenes.as_mut().unwrap()[0]
+                                .set_camera_dir(crate::src::scene::camera::Direction::Backwards);
+                        }
+                        (KeyCode::KeyA, ElementState::Pressed) => {
+                            self.scenes.as_mut().unwrap()[0]
+                                .set_camera_dir(crate::src::scene::camera::Direction::Left);
+                        }
+                        (KeyCode::KeyD, ElementState::Pressed) => {
+                            self.scenes.as_mut().unwrap()[0]
+                                .set_camera_dir(crate::src::scene::camera::Direction::Right);
+                        }
                         // When any of WASD keys are released, stop the movement in that direction
                         (
                             KeyCode::KeyW | KeyCode::KeyS | KeyCode::KeyA | KeyCode::KeyD,
                             ElementState::Released,
-                        ) => {}
+                        ) => self.scenes.as_mut().unwrap()[0]
+                            .set_camera_dir(crate::src::scene::camera::Direction::None),
                         _ => (),
                     }
                 }
@@ -213,14 +262,14 @@ impl ApplicationHandler for Demo {
             WindowEvent::CursorMoved { position, .. } => {
                 if self.is_mouse_dragging {
                     if let Some(last_pos) = self.last_mouse_pos {
-                        /*  if let Some(engine_core) = self.engine_core.as_mut() {
+                        if let Some(scenes) = self.scenes.as_mut() {
                             // Calculate relative movement
                             let dx = position.x - last_pos.0;
                             let dy = -position.y + last_pos.1;
 
                             // Rotate camera (you might want to adjust these sensitivity values)
-                            //engine_core.camera.rotate(dx as i32, dy as i32);
-                        } */
+                            scenes[0].rotate_camera(dx as i32, dy as i32);
+                        }
                     }
                     self.last_mouse_pos = Some((position.x, position.y));
                 }
@@ -268,15 +317,19 @@ impl ApplicationHandler for Demo {
             let gl_context = self.gl_context.as_ref().unwrap();
             let gl = self.gl.as_ref().unwrap();
 
-            unsafe {
-                gl.clear_color(0.4, 0.8, 0.4, 1.0);
-                gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT)
-            }
-
             let width = gl_surface.width().unwrap() as f32;
             let height = gl_surface.height().unwrap() as f32;
             let win_ratio = width / height;
-            //self.engine_core.as_mut().unwrap().run(win_ratio);
+
+            self.scenes.as_mut().unwrap()[0].camera.update_motion();
+
+            let renderer = self.renderer.as_mut().unwrap();
+            renderer.begin_frame(gl, win_ratio, &self.scenes.as_ref().unwrap()[0]);
+            renderer.render_scene(
+                gl,
+                &self.scenes.as_ref().unwrap()[0],
+                &self.model.as_ref().unwrap(),
+            );
 
             window.request_redraw();
 

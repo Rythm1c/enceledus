@@ -4,6 +4,7 @@ use math::{
     vec3::{Vec3, cross, vec3},
 };
 
+#[derive(Clone, PartialEq, Copy)]
 pub enum Direction {
     None,
     Forwards,
@@ -11,6 +12,7 @@ pub enum Direction {
     Left,
     Right,
 }
+#[derive(Clone)]
 pub struct Camera {
     yaw: f32,
     pitch: f32,

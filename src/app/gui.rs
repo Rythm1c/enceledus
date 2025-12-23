@@ -1,4 +1,4 @@
-/// GUI management for egui integration
+/* /// GUI management for egui integration
 /// Handles UI for scene manipulation, model loading, physics parameters, etc
 
 use crate::src::core::scene::{Scene, EntityId};
@@ -131,3 +131,4 @@ mod tests {
         assert!(!gui.physics_enabled);
     }
 }
+ */

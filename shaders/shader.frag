@@ -5,7 +5,7 @@ in vs_Out {
     vec3 normal;
     vec3 fragPos;
     vec2 texCoords;
-    vec4 lightSpace;
+    //vec4 lightSpace;
 } fs_in;
 
 #define MAX_LIGHTS 20
@@ -19,6 +19,7 @@ uniform vec3 camPos;
 
 /*** material defination ***/
 uniform vec4 baseColor; // or emissive factor
+
 uniform float metallicFactor;
 uniform float roughness;
 uniform float ao;
@@ -26,6 +27,7 @@ uniform float ao;
 uniform sampler2D albedoMap;
 uniform sampler2D metallicMap;
 uniform sampler2D normalMap;
+
 uniform bool hasBaseTexture;
 uniform bool hasMetallicMap;
 
@@ -46,11 +48,13 @@ float blend(float far);
 void main() {
 
     vec3 albedo = pow(baseColor.xyz, vec3(2.2));
+    
     if(hasBaseTexture) {
         albedo = pow(texture(albedoMap, fs_in.texCoords).rgb, vec3(2.2));
     }
 
     float metallic = metallicFactor;
+
     if(hasMetallicMap) {
         metallic = texture(metallicMap, fs_in.texCoords).r;
     }
@@ -63,6 +67,7 @@ void main() {
 
     vec3 lo = vec3(0.0);
     for(int i = 0; i < lightCount; i++) {
+
         vec3 L = normalize(lights[i].position - fs_in.fragPos);
         vec3 H = normalize(V + L);
 
@@ -101,7 +106,7 @@ void main() {
     // gamma correction
     result = pow(result, vec3(1.0 / 2.2));
 
-    color = vec4(result, 1.0);
+    color = vec4(albedo, 1.0);
 }
 
 //*** function deinations **//

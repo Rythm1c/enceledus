@@ -1,49 +1,36 @@
-use std::fs;
-
 use glow::HasContext;
 
-pub struct Shader {
+use std::fs;
+
+#[derive(Clone)]
+pub struct Program {
     id: glow::NativeProgram,
 }
 
-impl Shader {
+impl Program {
     pub fn from_files(gl: &glow::Context, vert_src: &str, frag_src: &str) -> Self {
         let vert_src = fs::read_to_string(vert_src).expect("failed to read vertex shader");
-        let frag_src = fs::read_to_string(frag_src).expect("failed to read vertex shader");
+        let frag_src = fs::read_to_string(frag_src).expect("failed to read fragment shader");
 
-        Self::from_src(gl, &vert_src, &frag_src)
+        Self::from_src(
+            gl,
+            [
+                (&vert_src[..], glow::VERTEX_SHADER),
+                (&frag_src[..], glow::FRAGMENT_SHADER),
+            ]
+            .as_ref(),
+        )
     }
 
-    pub fn from_src(gl: &glow::Context, vert_src: &str, frag_src: &str) -> Self {
+    pub fn from_src(gl: &glow::Context, shaders: &[(&str, u32)]) -> Self {
         unsafe {
             let program = gl.create_program().expect("cannot create program");
 
-            let vs = gl
-                .create_shader(glow::VERTEX_SHADER)
-                .expect("cannot create vertex shader");
-            gl.shader_source(vs, vert_src);
-            gl.compile_shader(vs);
-            if !gl.get_shader_compile_status(vs) {
-                panic!(
-                    "failed to cmpile vertex shader: {}",
-                    gl.get_shader_info_log(vs)
-                );
+            for src in shaders {
+                let shader = Shader::from_shader(gl, src.0, src.1);
+                gl.attach_shader(program, shader.id);
+                shader.delete(gl);
             }
-
-            let fs = gl
-                .create_shader(glow::FRAGMENT_SHADER)
-                .expect("cannot create vertex shader");
-            gl.shader_source(fs, frag_src);
-            gl.compile_shader(fs);
-            if !gl.get_shader_compile_status(fs) {
-                panic!(
-                    "failed to cmpile vertex shader: {}",
-                    gl.get_shader_info_log(fs)
-                );
-            }
-
-            gl.attach_shader(program, vs);
-            gl.attach_shader(program, fs);
 
             gl.link_program(program);
 
@@ -53,9 +40,6 @@ impl Shader {
                     gl.get_program_info_log(program)
                 );
             }
-
-            gl.delete_shader(vs);
-            gl.delete_shader(fs);
 
             Self { id: program }
         }
@@ -83,17 +67,17 @@ impl Shader {
         }
     }
 
-    pub fn set_uniform_f32(&self, gl: &glow::Context, name: &str, value: i32) {
+    pub fn set_uniform_f32(&self, gl: &glow::Context, name: &str, value: f32) {
         unsafe {
             let loc = gl.get_uniform_location(self.id, name);
 
             if let Some(loc) = loc {
-                gl.uniform_1_i32(Some(&loc), value);
+                gl.uniform_1_f32(Some(&loc), value);
             }
         }
     }
 
-    pub fn set_uniform_mat4(&self, gl: &glow::Context, name: &str, mat: &[f32; 16]) {
+    pub fn set_uniform_mat4(&self, gl: &glow::Context, name: &str, mat: &[f32]) {
         unsafe {
             let loc = gl.get_uniform_location(self.id, name);
 
@@ -110,6 +94,42 @@ impl Shader {
             if let Some(loc) = loc {
                 gl.uniform_3_f32(Some(&loc), vec[0], vec[1], vec[2]);
             }
+        }
+    }
+
+    pub fn set_uniform_vec4(&self, gl: &glow::Context, name: &str, vec: &[f32; 4]) {
+        unsafe {
+            let loc = gl.get_uniform_location(self.id, name);
+
+            if let Some(loc) = loc {
+                gl.uniform_4_f32(Some(&loc), vec[0], vec[1], vec[2], vec[3]);
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
+struct Shader {
+    id: glow::NativeShader,
+}
+
+impl Shader {
+    pub fn from_shader(gl: &glow::Context, src: &str, stage: u32) -> Self {
+        unsafe {
+            let id = gl.create_shader(stage).expect("cannot create shader");
+            gl.shader_source(id, src);
+            gl.compile_shader(id);
+            if !gl.get_shader_compile_status(id) {
+                panic!("failed to compile shader: {}", gl.get_shader_info_log(id));
+            }
+
+            Self { id }
+        }
+    }
+
+    pub fn delete(&self, gl: &glow::Context) {
+        unsafe {
+            gl.delete_shader(self.id);
         }
     }
 }

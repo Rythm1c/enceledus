@@ -1,6 +1,6 @@
 pub mod app;
-pub mod core;
+pub mod cpu;
 pub mod gpu;
-pub mod render;
 pub mod loader;
-pub mod physics;
+pub mod renderer;
+pub mod scene;

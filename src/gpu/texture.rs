@@ -1,17 +1,18 @@
 use glow::HasContext;
 
-use crate::src::core::texture::CPUTexture;
-use crate::src::core::texture::TextureFormat;
+use crate::src::cpu::texture::Texture;
+use crate::src::cpu::texture::TextureFormat;
 
-pub struct GPUTexture {
+#[derive(Clone, Copy)]
+pub struct GpuTexture {
     id: glow::Texture,
     width: u32,
     height: u32,
 }
 
-impl GPUTexture {
-    // upload cpu texture data to the gpu 
-    pub fn from_cpu(gl: &glow::Context, cpu: &CPUTexture) -> Self {
+impl GpuTexture {
+    // upload cpu texture data to the gpu
+    pub fn from_cpu(gl: &glow::Context, cpu: &Texture) -> Self {
         unsafe {
             let tex = gl.create_texture().expect("Failed to create texture");
             gl.bind_texture(glow::TEXTURE_2D, Some(tex));

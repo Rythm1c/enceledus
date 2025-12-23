@@ -53,6 +53,7 @@ impl Mat4 {
     pub fn from(values: &[[f32; 4]; 4]) -> Self {
         Self { data: *values }
     }
+
     /// changes signs past 180 degrees  
     /// not sure why though
     pub fn to_quat(&self) -> Quat {

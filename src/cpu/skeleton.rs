@@ -1,9 +1,9 @@
-use animation::skeleton::Skeleton;
+/* use animation::skeleton::Skeleton;
 use animation::clip::Clip;
 
 /// Pure animation data, separate from geometry
 #[derive(Clone)]
-pub struct CPUSkeleton {
+pub struct Skeleton {
     pub skeleton: Option<Skeleton>,
     pub clips: Vec<Clip>,
     pub name: Option<String>,
@@ -43,3 +43,4 @@ impl CPUSkeleton {
         self.name = Some(name);
     }
 }
+ */

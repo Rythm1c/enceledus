@@ -1,4 +1,3 @@
-use crate::src::gpu::resource_manager::GPUModelHandle;
 
 /// GPU-side animation skeleton
 /// Stores bone matrices ready for GPU skinning
@@ -32,27 +31,4 @@ impl GPUSkeleton {
 
 /// Links a GPU model with its skeleton for animation
 /// This is what you render when the model is animated
-pub struct GPUAnimatedModel {
-    pub id: usize,
-    pub geometry: GPUModelHandle,
-    pub skeleton: Option<usize>, // GPUSkeleton ID
-}
-
-impl GPUAnimatedModel {
-    pub fn new(id: usize, geometry: GPUModelHandle) -> Self {
-        Self {
-            id,
-            geometry,
-            skeleton: None,
-        }
-    }
-
-    pub fn with_skeleton(mut self, skeleton_id: usize) -> Self {
-        self.skeleton = Some(skeleton_id);
-        self
-    }
-
-    pub fn is_animated(&self) -> bool {
-        self.skeleton.is_some()
-    }
-}
+pub struct GPUAnimatedModel {}
