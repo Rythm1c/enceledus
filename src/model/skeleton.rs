@@ -1,13 +1,13 @@
 
 /// GPU-side animation skeleton
 /// Stores bone matrices ready for GPU skinning
-pub struct GPUSkeleton {
+pub struct Skeleton {
     pub id: usize,
     pub bone_matrices: Vec<math::mat4::Mat4>,
     pub bone_count: usize,
 }
 
-impl GPUSkeleton {
+impl Skeleton {
     pub fn new(id: usize, bone_count: usize) -> Self {
         Self {
             id,

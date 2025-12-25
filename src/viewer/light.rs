@@ -32,14 +32,6 @@ impl PointLightManager {
         }
     }
 
-    pub fn add_point_light(&mut self, pos: Vec3, col: Vec3) {
-        self.point_lights.push(PointLight::new(pos, col));
-    }
-
-    pub fn get_point_light(&self, index: usize) -> &PointLight {
-        &self.point_lights[index]
-    }
-
     pub fn update_point_light(&mut self, index: usize, pos: Vec3, col: Vec3) {
         if let Some(point_light) = self.point_lights.get_mut(index) {
             point_light.pos = pos;
@@ -47,6 +39,15 @@ impl PointLightManager {
         } else {
             panic!("point light index({}) out of bounds!", index);
         }
+    }
+
+    pub fn add_point_light(&mut self, pos: Vec3, col: Vec3) -> &mut Self {
+        self.point_lights.push(PointLight::new(pos, col));
+        self
+    }
+
+    pub fn get_point_light(&self, index: usize) -> &PointLight {
+        &self.point_lights[index]
     }
 
     pub fn get_point_lights(&self) -> &Vec<PointLight> {

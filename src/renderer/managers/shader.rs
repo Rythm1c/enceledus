@@ -1,14 +1,17 @@
-use crate::src::cpu::material::Material;
-use crate::src::gpu::{shader::Program, texture::GpuTexture};
-use crate::src::scene::camera::Camera;
-use crate::src::scene::light::PointLight;
+use crate::src::model::material::Material;
+use crate::src::model::texture::Texture;
+use crate::src::viewer::camera::Camera;
+use crate::src::viewer::light::PointLight;
 use math::{mat4::Mat4, vec3::Vec3, vec4::Vec4};
 use std::collections::HashMap;
+
+use crate::src::renderer::shader::Program;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum UniformLevel {
     Frame,
     Model,
+    Node,
     Primitive,
 }
 
@@ -19,7 +22,7 @@ pub enum UniformValue {
     Vector3f(Vec3),
     Vector4f(Vec4),
     Matrix4x4(Mat4),
-    Texture(GpuTexture, u32),
+    Texture(Texture, u32),
 }
 
 #[derive(Clone)]
@@ -82,10 +85,10 @@ impl ShaderManager {
             .set_has_metallic_map_uniform(material.metallic_roughness_texture.is_some())
     }
 
-    pub fn set_world_uniform(&mut self, value: &Mat4) -> &mut Self {
+    pub fn set_transform_uniform(&mut self, value: &Mat4) -> &mut Self {
         self.set_uniform(
-            "world",
-            Uniform::new(UniformLevel::Primitive, UniformValue::Matrix4x4(*value)),
+            "transform",
+            Uniform::new(UniformLevel::Node, UniformValue::Matrix4x4(*value)),
         );
         self
     }
@@ -146,7 +149,7 @@ impl ShaderManager {
         self
     }
 
-    pub fn set_base_texture_uniform(&mut self, value: &GpuTexture) -> &mut Self {
+    pub fn set_base_texture_uniform(&mut self, value: &Texture) -> &mut Self {
         self.set_uniform(
             "albedoMap",
             Uniform::new(UniformLevel::Primitive, UniformValue::Texture(*value, 0)),
@@ -154,7 +157,7 @@ impl ShaderManager {
         self
     }
 
-    pub fn set_metallic_map_uniform(&mut self, value: &GpuTexture) -> &mut Self {
+    pub fn set_metallic_map_uniform(&mut self, value: &Texture) -> &mut Self {
         self.set_uniform(
             "metallicMap",
             Uniform::new(UniformLevel::Primitive, UniformValue::Texture(*value, 1)),
@@ -162,7 +165,7 @@ impl ShaderManager {
         self
     }
 
-    pub fn set_normal_map_uniform(&mut self, value: &GpuTexture) -> &mut Self {
+    pub fn set_normal_map_uniform(&mut self, value: &Texture) -> &mut Self {
         self.set_uniform(
             "normalMap",
             Uniform::new(UniformLevel::Primitive, UniformValue::Texture(*value, 2)),
@@ -181,7 +184,7 @@ impl ShaderManager {
     pub fn set_has_base_tex_uniform(&mut self, value: bool) -> &mut Self {
         self.set_uniform(
             "hasBaseTexture",
-            Uniform::new(UniformLevel::Model, UniformValue::Int(value as i32)),
+            Uniform::new(UniformLevel::Primitive, UniformValue::Int(value as i32)),
         );
         self
     }
@@ -189,7 +192,7 @@ impl ShaderManager {
     pub fn set_has_metallic_map_uniform(&mut self, value: bool) -> &mut Self {
         self.set_uniform(
             "hasMetallicMap",
-            Uniform::new(UniformLevel::Model, UniformValue::Int(value as i32)),
+            Uniform::new(UniformLevel::Primitive, UniformValue::Int(value as i32)),
         );
 
         self
@@ -198,7 +201,7 @@ impl ShaderManager {
     fn set_point_light_count_uniform(&mut self, count: i32) {
         self.set_uniform(
             "lightCount",
-            Uniform::new(UniformLevel::Model, UniformValue::Int(count)),
+            Uniform::new(UniformLevel::Frame, UniformValue::Int(count)),
         );
     }
     pub fn set_point_lights_uniform(&mut self, point_lights: &Vec<PointLight>) -> &mut Self {
@@ -207,24 +210,26 @@ impl ShaderManager {
         point_lights.iter().enumerate().for_each(|(i, pl)| {
             self.set_uniform(
                 &format!("lights[{i}].position")[..],
-                Uniform::new(UniformLevel::Model, UniformValue::Vector3f(pl.get_pos())),
+                Uniform::new(UniformLevel::Frame, UniformValue::Vector3f(pl.get_pos())),
             );
             self.set_uniform(
                 &format!("lights[{i}].color")[..],
-                Uniform::new(UniformLevel::Model, UniformValue::Vector3f(pl.get_col())),
+                Uniform::new(UniformLevel::Frame, UniformValue::Vector3f(pl.get_col())),
             );
         });
         self
     }
 
-    pub fn set_per_frame_uniforms(&self, gl: &glow::Context) {
+    pub fn set_skeleton_matrices() {}
+
+    pub fn update_per_frame_uniforms(&self, gl: &glow::Context) {
         self.uniforms.iter().for_each(|uniform| {
             if uniform.1.get_level() == UniformLevel::Frame {
                 self.upload_uniform(gl, &uniform.0[..], uniform.1)
             }
         });
     }
-    pub fn set_per_model_uniforms(&self, gl: &glow::Context) {
+    pub fn update_per_model_uniforms(&self, gl: &glow::Context) {
         self.uniforms.iter().for_each(|uniform| {
             if uniform.1.get_level() == UniformLevel::Model {
                 self.upload_uniform(gl, &uniform.0[..], uniform.1)
@@ -232,9 +237,17 @@ impl ShaderManager {
         });
     }
 
-    pub fn set_per_primitive_uniforms(&self, gl: &glow::Context) {
+    pub fn update_per_primitive_uniforms(&self, gl: &glow::Context) {
         self.uniforms.iter().for_each(|uniform| {
             if uniform.1.get_level() == UniformLevel::Primitive {
+                self.upload_uniform(gl, &uniform.0[..], uniform.1)
+            }
+        });
+    }
+
+    pub fn update_per_node_uniforms(&self, gl: &glow::Context) {
+        self.uniforms.iter().for_each(|uniform| {
+            if uniform.1.get_level() == UniformLevel::Node {
                 self.upload_uniform(gl, &uniform.0[..], uniform.1)
             }
         });

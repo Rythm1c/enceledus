@@ -12,7 +12,7 @@ pub enum Direction {
     Left,
     Right,
 }
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Camera {
     yaw: f32,
     pitch: f32,

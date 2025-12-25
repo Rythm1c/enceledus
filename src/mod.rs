@@ -1,6 +1,5 @@
 pub mod app;
-pub mod cpu;
-pub mod gpu;
-pub mod loader;
+pub mod model;
 pub mod renderer;
-pub mod scene;
+pub mod utils;
+pub mod viewer;

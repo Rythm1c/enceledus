@@ -10,7 +10,7 @@ layout(location = 3) in vec4 weights;
 
 layout(location = 4) in vec4 boneIds;
 
-uniform mat4 world;
+uniform mat4 transform;
 
 uniform mat4 view;
 
@@ -33,7 +33,7 @@ const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 boneMats[MAX_BONES];
 
 void main() {
-    mat4 final_mat = world;
+    mat4 final_mat = transform;
 
     if (animated){
 
@@ -43,7 +43,7 @@ void main() {
             skin += boneMats[int(boneIds[i])] * weights[i];
         }
 
-        final_mat = world * skin;
+        final_mat = transform * skin;
     }
 
     gl_Position = projection * view * final_mat * vec4(pos, 1.0);
